@@ -12,8 +12,6 @@ class kafkaVideoStreaming():
         self.client_id = client_id
         self.bootstrap_servers = bootstrap_servers
         self.frq = frq
-        
-        self.run()
 
     def setProducer(self):
         self.producer = KafkaProducer(
@@ -72,25 +70,29 @@ class kafkaVideoStreaming():
         )
 
         self.keep_processing = True
-        while(__VIDEO_FILE.isOpened()) and self.keep_processing:
-            readStat, frame = __VIDEO_FILE.read()
+        try:
+            while(__VIDEO_FILE.isOpened()) and self.keep_processing:
+                readStat, frame = __VIDEO_FILE.read()
 
-            if not readStat:
-                self.keep_processing = False
+                if not readStat:
+                    self.keep_processing = False
 
-            ret, buffer = cv2.imencode('.jpg', frame)
-            self.publishFrames(buffer.tostring())
+                ret, buffer = cv2.imencode('.jpg', frame)
+                self.publishFrames(buffer.tostring())
             
-            sleep(self.frq)
+                sleep(self.frq)
 
 
-        if self.keep_processing:
-            print('Finished processing video %s' % self.topicKey)
-        else:
-            print("Error while reading %s" % self.topicKey)
+            if self.keep_processing:
+                print('Finished processing video %s' % self.topicKey)
+            else:
+                print("Error while reading %s" % self.topicKey)
         
-        __VIDEO_FILE.release()
-        
+            __VIDEO_FILE.release()
+        except KeyboardInterrupt:
+            __VIDEO_FILE.release()
+            print("Keyboard interrupt was detected. Exiting...")
+
 
 
 if __name__ == "__main__":
@@ -100,4 +102,4 @@ if __name__ == "__main__":
         videoFile=argv[1],
         client_id='KafkaVideoStreamClient',
     )
-    videoStream().run()
+    videoStream.run()
