@@ -42,31 +42,45 @@ class kafkaVideoView():
             )
 
     def playStream(self, queue):
-        while True:
-            msg = queue.get()
-            nparr = np.frombuffer(msg, np.uint8)
-            frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            cv2.imshow('frame', frame)
-            
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                self.keep_consuming = False
-                break
+        while self.keepPlaying:
+            try:
+                msg = queue.get(block=True, timeout=20)
+                self.queue_status = True
+            except:
+                print("WARN: Timed out waiting for queue. Retrying...")
+                self.queue_status = False
 
-            sleep(self.frq)
+            if self.queue_status:
+                nparr = np.frombuffer(msg, np.uint8)
+                frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                cv2.imshow('frame', frame)
+            
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    self.keepConsuming = False
+                    break
+
+                sleep(self.frq)
 
     def run(self):
+        self.keepPlaying = True
         self.setConsumer()
         self.videoQueue = Queue()
-        self.keep_consuming = True
+        self.keepConsuming = True
 
         self.playerThread = Thread(target=self.playStream, args=(self.videoQueue, ), daemon=False)
         self.playerThread.start()
 
-        while self.keep_consuming:
-            payload = self.consumer.poll(self.poll)
-            for bucket in payload:
-                for msg in payload[bucket]:
-                    self.videoQueue.put(msg.value)
+        try:
+            while self.keepConsuming:
+                payload = self.consumer.poll(self.poll)
+                for bucket in payload:
+                    for msg in payload[bucket]:
+                        self.videoQueue.put(msg.value)
+
+        except KeyboardInterrupt:
+            self.keepConsuming = False
+            self.keepPlaying = False
+            print("WARN: Keyboard Interrupt detected. Exiting...")
 
         self.playerThread.join()
 
