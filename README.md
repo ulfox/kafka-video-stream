@@ -1,6 +1,6 @@
 # Kafka Video Stream
 
-Visit my blog for additional info and instructions: [Kafka-Video-Streaming](https://blog.primef.org/blog/kafka/2021-04-10/kafka-video-stream/)
+Visit my blog for additional info and instructions: [Kafka-Video-Streaming](https://blog.sysiops.com/blog/kafka/2021-04-10/kafka-video-stream/)
 
 ## Setup and start producer
 
